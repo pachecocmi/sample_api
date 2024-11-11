@@ -20,32 +20,19 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first
+# Copy only the composer files first
 COPY composer.json composer.lock ./
 
-# Set permissions for composer
-RUN chown -R www-data:www-data .
-USER www-data
-
-# Install dependencies
+# Install dependencies without scripts
 RUN composer install --no-scripts --no-autoloader
 
-# Copy the rest of the application code
-USER root
+# Copy the rest of the application
 COPY . .
 
-# Set proper permissions
-RUN chown -R www-data:www-data .
-
-# Generate autoload files and optimize
-USER www-data
+# Run composer scripts and generate autoloader
 RUN composer dump-autoload --optimize
 
-# Switch back to root for Apache
-USER root
-
-# Expose port
-EXPOSE 80
-
-# Start Apache
-CMD ["apache2-foreground"]
+# Configure Apache DocumentRoot
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www
