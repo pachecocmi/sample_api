@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl
+RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
 RUN a2enmod rewrite
 
 # Install Composer
@@ -35,4 +35,14 @@ RUN composer dump-autoload --optimize
 # Configure Apache DocumentRoot
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && a2enmod rewrite
+
+# Expose port
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
