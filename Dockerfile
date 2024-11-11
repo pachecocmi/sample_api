@@ -1,4 +1,3 @@
-# Dockerfile
 FROM php:8.0-apache
 
 # Install dependencies
@@ -21,14 +20,29 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
-COPY . .
+# Copy composer files first
+COPY composer.json composer.lock ./
+
+# Set permissions for composer
+RUN chown -R www-data:www-data .
+USER www-data
 
 # Install dependencies
-RUN composer install --no-dev --no-interaction --optimize-autoloader
+RUN composer install --no-scripts --no-autoloader
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html
+# Copy the rest of the application code
+USER root
+COPY . .
+
+# Set proper permissions
+RUN chown -R www-data:www-data .
+
+# Generate autoload files and optimize
+USER www-data
+RUN composer dump-autoload --optimize
+
+# Switch back to root for Apache
+USER root
 
 # Expose port
 EXPOSE 80
