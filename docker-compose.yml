@@ -1,0 +1,41 @@
+# Docker Compose
+version: '3'
+
+services:
+
+  api:
+    build: .
+    container_name: laravel-api
+    ports:
+      - 8000:80
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_HOST: db
+      DB_DATABASE: laravel
+      DB_USERNAME: root
+      DB_PASSWORD: password
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.5
+    container_name: laravel-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: laravel
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: laravel-phpmyadmin
+    ports:
+      - 8001:80
+    environment:
+      PMA_HOST: db
+    depends_on:
+      - db
+
+volumes:
+  mariadb-data:
