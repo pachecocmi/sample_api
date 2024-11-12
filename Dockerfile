@@ -38,10 +38,27 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Set proper permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chown -R www-data:www-data /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
-    && a2enmod rewrite
+RUN chown -R www-data:www-data /var/www/html && \
+    find /var/www/html/storage -type d -exec chmod 775 {} \; && \
+    find /var/www/html/storage -type f -exec chmod 664 {} \; && \
+    chmod -R 775 /var/www/html/bootstrap/cache && \
+    chmod -R 775 /var/www/html/storage && \
+    chown -R www-data:www-data /var/www/html/storage && \
+    chown -R www-data:www-data /var/www/html/bootstrap/cache
+
+# Create the bootstrap/cache directory if it doesn't exist
+RUN mkdir -p /var/www/html/bootstrap/cache && \
+    chown -R www-data:www-data /var/www/html/bootstrap/cache
+
+# Additional storage directory setup
+RUN mkdir -p /var/www/html/storage/framework/{sessions,views,cache} && \
+    mkdir -p /var/www/html/storage/logs && \
+    chown -R www-data:www-data /var/www/html/storage/framework && \
+    chown -R www-data:www-data /var/www/html/storage/logs
+
+# Make sure the apache user has the right permissions
+RUN usermod -u 1000 www-data
+RUN groupmod -g 1000 www-data
 
 # Expose port
 EXPOSE 80
